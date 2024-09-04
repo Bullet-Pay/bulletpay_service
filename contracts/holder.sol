@@ -15,7 +15,9 @@ contract ShareHolder {
 
     mapping(uint256 => address) public holders;
     mapping(address => uint256) public shares;
-    mapping(address => address) public votes;
+    uint256 public dilution_shares = 0;
+    mapping(address => uint256) public dilution_shares_votes;
+    mapping(address => address) public operator_votes;
     uint256 next_holder_no = 1;
 
     event SharesIssued(address indexed holder, uint256 amount);
@@ -57,6 +59,12 @@ contract ShareHolder {
 
     function submit_contribution(address _contributor, uint256 _amount) public {
         require(msg.sender == address(operator), "operator required");
+        uint256 total_contribution = 0;
+        for (uint256 i = 0; i < contributions.length; i++) {
+            total_contribution += contributions[i].amount;
+        }
+        require(_amount + total_contribution <= dilution_shares, 'dilution shares over');
+
         contributions.push(Contribution(_contributor, _amount));
         emit ContributionAdded(_contributor, _amount);
     }
@@ -137,21 +145,21 @@ contract ShareHolder {
     }
 
     function purchase_finance_shares(uint256 _price, uint256 _amount) public {
-        bool _quota_found = false;
+        bool quota_found = false;
         for (uint256 _i = 0; _i < available_finance_quota.length; _i++) {
             if (available_finance_quota[_i].price == _price) {
                 uint256 _available_amount = available_finance_quota[_i].amount;
                 uint256 _purchase_amount = _amount < _available_amount ? _amount : _available_amount;
                 require(_purchase_amount > 0, "Insufficient quota");
                 available_finance_quota[_i].amount -= _purchase_amount;
-                _quota_found = true;
+                quota_found = true;
                 break;
             }
         }
-        require(_quota_found, "No matching quota found");
+        require(quota_found, "no matching quota found");
 
         uint256 _total_cost = _price * _amount;
-        require(token.transferFrom(msg.sender, address(this), _total_cost), "Token transfer failed");
+        require(token.transferFrom(msg.sender, address(this), _total_cost), "token transfer failed");
 
         if (finance_shares[msg.sender] == 0) {
             next_finance_investor_no += 1;
@@ -217,16 +225,16 @@ contract ShareHolder {
     }
 
     function vote_operator(address _operator) public {
-        votes[msg.sender] = _operator;
+        operator_votes[msg.sender] = _operator;
 
         uint256 vote_shares = 0;
         for (uint256 i = 1; i < next_holder_no+1; i++) {
             // console.log(i);
             address holder = holders[i];
             // console.log(holder);
-            // console.log(votes[holder]);
+            // console.log(operator_votes[holder]);
             // console.log(_operator);
-            if(votes[holder] == _operator){
+            if(operator_votes[holder] == _operator){
                 uint256 share = shares[holder];
                 vote_shares += share;
                 // console.log(vote_shares);
@@ -235,6 +243,26 @@ contract ShareHolder {
                     break;
                 }
             }
+        }
+    }
+
+    function vote_dilution_shares(uint256 _amount) public {
+        // require(sender is share holder);
+        dilution_shares_votes[msg.sender] = _amount;
+        uint256 voting_shares = 0;
+        for (uint256 i = 1; i < next_holder_no+1; i++) {
+            // console.log(i);
+            address holder = holders[i];
+            // console.log(holder);
+            if(dilution_shares_votes[holder] == _amount){
+                voting_shares += shares[holder];
+                if(voting_shares > total_shares/2){
+                    dilution_shares = _amount;
+                    break;
+                }
+            }
+
+            // console.log(shares[holders[i]]);
         }
     }
 }
