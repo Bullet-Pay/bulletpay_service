@@ -18,6 +18,9 @@ contract ShareHolder {
     uint256 public dilution_shares = 0;
     mapping(address => uint256) public dilution_shares_votes;
     mapping(address => address) public operator_votes;
+    uint256 public pay_to_limit = 0;
+    uint256 public pay_to_amount = 0;
+    mapping(address => uint256) public pay_to_limit_votes;
     uint256 next_holder_no = 1;
 
     event SharesIssued(address indexed holder, uint256 amount);
@@ -199,7 +202,9 @@ contract ShareHolder {
 
     function pay_to(address _user, uint256 _amount) public {
         require(msg.sender == address(operator), "operator required");
-        require(token.transfer(_user, _amount), "Token transfer failed");
+        require(pay_to_amount + _amount <= pay_to_limit, "pay_to_amount exceeds pay_to_limit");
+        require(token.transfer(_user, _amount), "token transfer failed");
+        pay_to_amount += _amount;
     }
 
     function set_proportion(uint256 _proportion) public {
@@ -211,7 +216,7 @@ contract ShareHolder {
         finance_shares[msg.sender] -= _amount;
         total_finance_shares -= _amount;
 
-        require(token.transfer(msg.sender, buyback_finance_quota.price * _amount), "Token transfer failed");
+        require(token.transfer(msg.sender, buyback_finance_quota.price * _amount), "token transfer failed");
     }
 
     function update_buy_back_quota(uint256 _price, int256 _amount) public {
@@ -225,6 +230,7 @@ contract ShareHolder {
     }
 
     function vote_operator(address _operator) public {
+        require(shares[msg.sender] > 0, "voter must be a holder");
         operator_votes[msg.sender] = _operator;
 
         uint256 vote_shares = 0;
@@ -247,7 +253,8 @@ contract ShareHolder {
     }
 
     function vote_dilution_shares(uint256 _amount) public {
-        // require(sender is share holder);
+        require(shares[msg.sender] > 0, "voter must be a holder");
+
         dilution_shares_votes[msg.sender] = _amount;
         uint256 voting_shares = 0;
         for (uint256 i = 1; i < next_holder_no+1; i++) {
@@ -258,6 +265,26 @@ contract ShareHolder {
                 voting_shares += shares[holder];
                 if(voting_shares > total_shares/2){
                     dilution_shares = _amount;
+                    break;
+                }
+            }
+
+            // console.log(shares[holders[i]]);
+        }
+    }
+
+    function vote_pay_to_limit(uint256 _amount) public {
+        require(shares[msg.sender] > 0, "voter must be a holder");
+
+        uint256 voting_shares = 0;
+        for (uint256 i = 1; i < next_holder_no+1; i++) {
+            // console.log(i);
+            address holder = holders[i];
+            // console.log(holder);
+            if(pay_to_limit_votes[holder] == _amount){
+                voting_shares += shares[holder];
+                if(voting_shares > total_shares/2){
+                    pay_to_limit = _amount;
                     break;
                 }
             }
