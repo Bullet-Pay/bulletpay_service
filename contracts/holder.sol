@@ -50,7 +50,6 @@ contract ShareHolder {
     event FinanceInvestorSharesBuyback(address indexed investor, uint256 percentage);
 
     IERC20 public token;
-    uint256 public proportion = 10000;
 
     constructor(address _tokenAddress) {
         operator = msg.sender;
@@ -205,11 +204,6 @@ contract ShareHolder {
         require(pay_to_amount + _amount <= pay_to_limit, "pay_to_amount exceeds pay_to_limit");
         require(token.transfer(_user, _amount), "token transfer failed");
         pay_to_amount += _amount;
-    }
-
-    function set_proportion(uint256 _proportion) public {
-        require(msg.sender == address(operator), "operator required");
-        proportion = _proportion;
     }
 
     function buy_back(uint256 _amount) public {
