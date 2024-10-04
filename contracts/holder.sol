@@ -11,17 +11,20 @@ interface IERC20 {
 
 contract ShareHolder {
     uint256 constant total_shares = 10**20;
+
     address public operator;
+    mapping(address => address) public operator_votes;
 
     mapping(uint256 => address) public holders;
+    uint256 next_holder_no = 1;
+
     mapping(address => uint256) public shares;
     uint256 public dilution_shares = 0;
     mapping(address => uint256) public dilution_shares_votes;
-    mapping(address => address) public operator_votes;
+
     uint256 public pay_to_limit = 0;
     uint256 public pay_to_amount = 0;
     mapping(address => uint256) public pay_to_limit_votes;
-    uint256 next_holder_no = 1;
 
     event SharesIssued(address indexed holder, uint256 amount);
     // event SharesTransferred(address indexed from, address indexed to, uint256 amount);
@@ -45,9 +48,9 @@ contract ShareHolder {
     Contribution[] contributions;
     event ContributionAdded(address indexed contributor, uint256 amount);
 
-    event FinanceInvestorSharesIssued(address indexed investor, uint256 percentage);
-    event FinanceInvestorSharesTransferred(address indexed investor);
-    event FinanceInvestorSharesBuyback(address indexed investor, uint256 percentage);
+    event FinanceSharesIssued(address indexed investor, uint256 percentage);
+    // event FinanceSharesTransferred(address indexed investor);
+    event FinanceSharesBuyback(address indexed investor, uint256 percentage);
 
     IERC20 public token;
 
@@ -96,6 +99,13 @@ contract ShareHolder {
         }
     }
 
+    function pay_to(address _user, uint256 _amount) public {
+        require(msg.sender == address(operator), "operator required");
+        require(pay_to_amount + _amount <= pay_to_limit, "pay_to_amount exceeds pay_to_limit");
+        require(token.transfer(_user, _amount), "token transfer failed");
+        pay_to_amount += _amount;
+    }
+
     function redistribute() public {
         require(msg.sender == address(operator), "operator required");
 
@@ -124,103 +134,6 @@ contract ShareHolder {
         for (uint256 i = 0; i < contributions.length; i++) {
             contributions.pop();
         }
-    }
-
-    function update_finance_quota(uint256 price, int256 amount) public {
-        require(msg.sender == operator, "operator required");
-
-        bool found = false;
-        for (uint256 i = 0; i < available_finance_quota.length; i++) {
-            if (available_finance_quota[i].price == price) {
-                if (amount > 0){
-                    available_finance_quota[i].amount += uint256(amount);
-                }else{
-                    available_finance_quota[i].amount -= uint256(-amount);
-                }
-                found = true;
-            }
-        }
-
-        if (!found && amount > 0){
-            available_finance_quota.push(Quota(price, uint256(amount)));
-        }
-    }
-
-    function purchase_finance_shares(uint256 _price, uint256 _amount) public {
-        bool quota_found = false;
-        for (uint256 _i = 0; _i < available_finance_quota.length; _i++) {
-            if (available_finance_quota[_i].price == _price) {
-                uint256 _available_amount = available_finance_quota[_i].amount;
-                uint256 _purchase_amount = _amount < _available_amount ? _amount : _available_amount;
-                require(_purchase_amount > 0, "Insufficient quota");
-                available_finance_quota[_i].amount -= _purchase_amount;
-                quota_found = true;
-                break;
-            }
-        }
-        require(quota_found, "no matching quota found");
-
-        uint256 _total_cost = _price * _amount;
-        require(token.transferFrom(msg.sender, address(this), _total_cost), "token transfer failed");
-
-        if (finance_shares[msg.sender] == 0) {
-            next_finance_investor_no += 1;
-            finance_holders[next_finance_investor_no] = msg.sender;
-        }
-        finance_shares[msg.sender] += _amount;
-        total_finance_shares += _amount;
-    }
-
-    function update_finance_shares_owner(address _owner) public {
-        for (uint256 i = 1; i < next_finance_investor_no+1; i++) {
-            // console.log(i);
-            if(finance_holders[i] == msg.sender){
-                finance_holders[i] = _owner;
-                // console.log(finance_shares[finance_holders[i]]);
-            }
-        }
-
-        uint256 share = finance_shares[msg.sender];
-        delete finance_shares[msg.sender];
-        finance_shares[_owner] = share;
-    }
-
-    function update_shares_owner(address _owner) public {
-        for (uint256 i = 1; i < next_holder_no+1; i++) {
-            // console.log(i);
-            if(holders[i] == msg.sender){
-                holders[i] = _owner;
-                // console.log(shares[holders[i]]);
-            }
-        }
-
-        uint256 share = shares[msg.sender];
-        delete shares[msg.sender];
-        shares[_owner] = share;
-    }
-
-    function pay_to(address _user, uint256 _amount) public {
-        require(msg.sender == address(operator), "operator required");
-        require(pay_to_amount + _amount <= pay_to_limit, "pay_to_amount exceeds pay_to_limit");
-        require(token.transfer(_user, _amount), "token transfer failed");
-        pay_to_amount += _amount;
-    }
-
-    function buy_back(uint256 _amount) public {
-        finance_shares[msg.sender] -= _amount;
-        total_finance_shares -= _amount;
-
-        require(token.transfer(msg.sender, buyback_finance_quota.price * _amount), "token transfer failed");
-    }
-
-    function update_buy_back_quota(uint256 _price, int256 _amount) public {
-        require(msg.sender == address(operator), "operator required");
-        if(_amount > 0){
-            buyback_finance_quota.amount += uint256(_amount);
-        }else{
-            buyback_finance_quota.amount -= uint256(-_amount);
-        }
-        buyback_finance_quota.price = _price;
     }
 
     function vote_operator(address _operator) public {
@@ -285,5 +198,95 @@ contract ShareHolder {
 
             // console.log(shares[holders[i]]);
         }
+    }
+
+    function purchase_finance_shares(uint256 _price, uint256 _amount) public {
+        bool quota_found = false;
+        for (uint256 _i = 0; _i < available_finance_quota.length; _i++) {
+            if (available_finance_quota[_i].price == _price) {
+                uint256 _available_amount = available_finance_quota[_i].amount;
+                uint256 _purchase_amount = _amount < _available_amount ? _amount : _available_amount;
+                require(_purchase_amount > 0, "Insufficient quota");
+                available_finance_quota[_i].amount -= _purchase_amount;
+                quota_found = true;
+                break;
+            }
+        }
+        require(quota_found, "no matching quota found");
+
+        uint256 _total_cost = _price * _amount;
+        require(token.transferFrom(msg.sender, address(this), _total_cost), "token transfer failed");
+
+        if (finance_shares[msg.sender] == 0) {
+            next_finance_investor_no += 1;
+            finance_holders[next_finance_investor_no] = msg.sender;
+        }
+        finance_shares[msg.sender] += _amount;
+        total_finance_shares += _amount;
+    }
+
+    function buy_back(uint256 _amount) public {
+        finance_shares[msg.sender] -= _amount;
+        total_finance_shares -= _amount;
+
+        require(token.transfer(msg.sender, buyback_finance_quota.price * _amount), "token transfer failed");
+    }
+
+    function update_finance_shares_owner(address _owner) public {
+        for (uint256 i = 1; i < next_finance_investor_no+1; i++) {
+            // console.log(i);
+            if(finance_holders[i] == msg.sender){
+                finance_holders[i] = _owner;
+                // console.log(finance_shares[finance_holders[i]]);
+            }
+        }
+
+        uint256 share = finance_shares[msg.sender];
+        delete finance_shares[msg.sender];
+        finance_shares[_owner] = share;
+    }
+
+    function update_shares_owner(address _owner) public {
+        for (uint256 i = 1; i < next_holder_no+1; i++) {
+            // console.log(i);
+            if(holders[i] == msg.sender){
+                holders[i] = _owner;
+                // console.log(shares[holders[i]]);
+            }
+        }
+
+        uint256 share = shares[msg.sender];
+        delete shares[msg.sender];
+        shares[_owner] = share;
+    }
+
+    function update_finance_quota(uint256 price, int256 amount) public {
+        require(msg.sender == operator, "operator required");
+
+        bool found = false;
+        for (uint256 i = 0; i < available_finance_quota.length; i++) {
+            if (available_finance_quota[i].price == price) {
+                if (amount > 0){
+                    available_finance_quota[i].amount += uint256(amount);
+                }else{
+                    available_finance_quota[i].amount -= uint256(-amount);
+                }
+                found = true;
+            }
+        }
+
+        if (!found && amount > 0){
+            available_finance_quota.push(Quota(price, uint256(amount)));
+        }
+    }
+
+    function update_buy_back_quota(uint256 _price, int256 _amount) public {
+        require(msg.sender == address(operator), "operator required");
+        if(_amount > 0){
+            buyback_finance_quota.amount += uint256(_amount);
+        }else{
+            buyback_finance_quota.amount -= uint256(-_amount);
+        }
+        buyback_finance_quota.price = _price;
     }
 }
