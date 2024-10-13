@@ -74,17 +74,18 @@ def test_update_finance_quota():
     assert holder.finance_shares(a[1]) == 0
     assert holder.total_finance_shares() == purchase_amount - 1000
 
-def _test_dividend():
-    operator = a[0]
+def test_dividend():
     mock_token = Erc20.deploy(1000000 * 10**18, "Mock Token", 18, "MTK", {'from': a[0], 'gas_price': 1950000000})
     # Deploy the ShareHolder contract
-    holder = ShareHolder.deploy(mock_token, {"from": operator, 'gas_price': 1950000000})
-    assert holder.get_shares(operator) == 10**20
+    holder = ShareHolder.deploy(mock_token, {"from": a[0], 'gas_price': 1950000000})
+    assert holder.get_shares(a[0]) == 10**20
+    holder.vote_dilution_shares(10**17 * 10, {"from": a[0], 'gas_price': 1950000000})
+    holder.dividend({"from": a[0], 'gas_price': 1950000000})
+    holder.redistribute({"from": a[0], 'gas_price': 1950000000})
 
     # Add a contribution
-    holder.submit_contribution(a[1], 10**17 * 10, {"from": operator, 'gas_price': 1950000000})
-    holder.redistribute({"from": operator, 'gas_price': 1950000000})
-    holder.update_finance_quota(100, 1000, {"from": operator, 'gas_price': 1950000000})
+    holder.submit_contribution(a[1], 10**17 * 10, {"from": a[0], 'gas_price': 1950000000})
+    holder.update_finance_quota(100, 1000, {"from": a[0], 'gas_price': 1950000000})
 
     mint_amount = 10000 * 10**18
     mock_token.transfer(a[1], mint_amount, {"from": a[0], 'gas_price': 1950000000})
@@ -93,7 +94,8 @@ def _test_dividend():
     purchase_amount = 1000
     holder.purchase_finance_shares(100, purchase_amount, {"from": a[1], 'gas_price': 1950000000})
 
-    holder.dividend({"from": operator, 'gas_price': 1950000000})
+    holder.dividend({"from": a[0], 'gas_price': 1950000000})
+    holder.redistribute({"from": a[0], 'gas_price': 1950000000})
 
 def test_update_buy_back_quota():
     operator = a[0]
@@ -159,7 +161,6 @@ def test_pay_to():
 
 
 def test_vote_operator():
-    operator = a[0]
     mock_token = Erc20.deploy(1000000 * 10**18, "Mock Token", 18, "MTK", {'from': a[0], 'gas_price': 1950000000})
     holder = ShareHolder.deploy(mock_token, {"from": a[0], 'gas_price': 1950000000})
 
@@ -180,6 +181,7 @@ def test_vote_dilution_shares():
 
     holder.submit_contribution(a[1], 10**20/100 * 30, {"from": operator, 'gas_price': 1950000000})
     holder.submit_contribution(a[2], 10**20/100 * 30, {"from": operator, 'gas_price': 1950000000})
+    holder.dividend({"from": operator, 'gas_price': 1950000000})
     holder.redistribute({"from": operator, 'gas_price': 1950000000})
     assert 10**20/100 * 30 == holder.shares(a[1])
     assert 10**20/100 * 30 == holder.shares(a[2])

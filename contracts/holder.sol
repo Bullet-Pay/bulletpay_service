@@ -26,6 +26,8 @@ contract ShareHolder {
     uint256 public pay_to_amount = 0;
     mapping(address => uint256) public pay_to_limit_votes;
 
+    uint256 public last_redistribute_timestamp = 0;
+    bool can_dividend = true;
     event SharesIssued(address indexed holder, uint256 amount);
     // event SharesTransferred(address indexed from, address indexed to, uint256 amount);
 
@@ -54,12 +56,24 @@ contract ShareHolder {
 
     IERC20 public token;
 
-    constructor(address _tokenAddress) {
+    constructor(address _token_address) {
         operator = msg.sender;
         shares[msg.sender] = total_shares;
         holders[next_holder_no] = msg.sender;
         emit SharesIssued(msg.sender, total_shares);
-        token = IERC20(_tokenAddress);
+        token = IERC20(_token_address);
+        last_redistribute_timestamp = block.timestamp;
+    }
+
+    function get_shares(address _holder) public view returns (uint256) {
+        return shares[_holder] * (total_shares - total_finance_shares) / total_shares;
+    }
+
+    function pay_to(address _user, uint256 _amount) public {
+        require(msg.sender == address(operator), "operator required");
+        require(pay_to_amount + _amount <= pay_to_limit, "pay_to_amount exceeds pay_to_limit");
+        require(token.transfer(_user, _amount), "token transfer failed");
+        pay_to_amount += _amount;
     }
 
     function submit_contribution(address _contributor, uint256 _amount) public {
@@ -74,11 +88,12 @@ contract ShareHolder {
         emit ContributionAdded(_contributor, _amount);
     }
 
-    function get_shares(address _holder) public view returns (uint256) {
-        return shares[_holder] * (total_shares - total_finance_shares) / total_shares;
-    }
-
     function dividend() public {
+        require(msg.sender == address(operator), "operator required");
+        require(block.timestamp - last_redistribute_timestamp > 1, "wait for more time");
+        require(can_dividend, "can dividend required");
+        can_dividend = false;
+
         for (uint256 i = 1; i < next_holder_no+1; i++) {
             // console.log(i);
             address holder = holders[i];
@@ -99,15 +114,11 @@ contract ShareHolder {
         }
     }
 
-    function pay_to(address _user, uint256 _amount) public {
-        require(msg.sender == address(operator), "operator required");
-        require(pay_to_amount + _amount <= pay_to_limit, "pay_to_amount exceeds pay_to_limit");
-        require(token.transfer(_user, _amount), "token transfer failed");
-        pay_to_amount += _amount;
-    }
-
     function redistribute() public {
         require(msg.sender == address(operator), "operator required");
+        require(!can_dividend, "dividend first");
+        last_redistribute_timestamp = block.timestamp;
+        can_dividend = true;
 
         uint256 total_contribution = 0;
         for (uint256 i = 0; i < contributions.length; i++) {
