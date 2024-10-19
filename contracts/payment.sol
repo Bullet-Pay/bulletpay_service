@@ -57,16 +57,17 @@ contract BulletPay {
         require(signer == topups[_from_topup_id].spender, "invalid signature1");
 
         uint256 remaining_balance = topups[_from_topup_id].balance - _amount;
-        // topups[_from_topup_id].balance = 0;
+        topups[_from_topup_id].balance = remaining_balance;
 
         // console.logAddress(_to_address);
         // console.log(_amount);
 
         require(token.transfer(_to_address, _amount), "transfer to address failed");
+        total -= _amount;
         // console.logAddress(signer);
         // console.log(remaining_balance);
 
-        emit TopupSpent(_from_topup_id, topups[_from_topup_id].spender, remaining_balance);
+        emit TopupSpent(_from_topup_id, signer, remaining_balance);
     }
 
     function recover_signer(bytes32 _message_hash, bytes memory _signature) internal view returns (address) {
