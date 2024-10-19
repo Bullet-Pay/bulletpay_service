@@ -35,3 +35,46 @@ def test_topup():
 
     bulletpay.topup(100* 10**6, a[1], {'from': a[0], 'gas_price': 1950000000})
 
+def test_pay_to():
+    # Deploy Erc20
+    mock_token = Erc20.deploy(1000000 * 10**6, "Mock USDC", 6, "mUSDC", {'from': a[0], 'gas_price': 1950000000})
+
+    # Deploy BulletPay
+    bulletpay = BulletPay.deploy(mock_token.address, {'from': a[0], 'gas_price': 1950000000})
+
+    PAYMENT_AMOUNT = 5 * 10**6  # 5 USDC
+    PRIVATE_KEY = "0x1234567890123456789012345678901234567890123456789012345678901234"
+    private_key_bytes = bytes.fromhex(PRIVATE_KEY[2:])
+    private_key = keys.PrivateKey(private_key_bytes)
+    SPENDER_ADDEESS = private_key.public_key.to_checksum_address()
+    TO_ADDRESS = a[1].address
+
+    bulletpay.topup(100* 10**6, SPENDER_ADDEESS, {'from': a[0], 'gas_price': 1950000000})
+
+    hash1 = web3.Web3.solidity_keccak(['address', 'uint256'], [TO_ADDRESS, PAYMENT_AMOUNT])
+    print(hash1.hex())
+    # hash2 = web3.Web3.solidity_keccak(['bytes', 'bytes32'], [b"\x19Ethereum Signed Message:\n32", hash1])
+    # print(hash2.hex())
+
+    # Sign the message using personal_sign
+    # signature = Account.signHash(hash2, private_key=PRIVATE_KEY)
+    # v, r, s = signature.v, signature.r, signature.s
+    # signature_bytes =  r.to_bytes(32, 'big') + s.to_bytes(32, 'big') + bytes([v])
+    message = encode_defunct(hexstr=hash1.hex())
+    signed_message =  Account.sign_message(message, private_key=PRIVATE_KEY)
+    signature_bytes = signed_message.signature
+
+    # Call payToAddress
+    tx = bulletpay.pay_to(1, TO_ADDRESS, PAYMENT_AMOUNT, signature_bytes, {'from': a[0], 'gas_price': 1950000000})
+
+    # Assert the payment event
+    # assert tx.events['AccountClosed']['accountId'] == 1
+    # assert tx.events['AccountClosed']['creator'] == a[0]
+    # assert tx.events['AccountClosed']['remainingBalance'] == DEPOSIT_AMOUNT - PAYMENT_AMOUNT
+
+    # assert mock_token.balanceOf(TO_ADDRESS) == PAYMENT_AMOUNT
+    # assert mock_token.balanceOf(a[0]) == 1000000 * 10**18 - DEPOSIT_AMOUNT + (DEPOSIT_AMOUNT - PAYMENT_AMOUNT)
+    # assert mock_token.balanceOf(sub_account_payment.address) == 0
+
+    # account = sub_account_payment.accounts(1)
+    # assert account[2] == True
