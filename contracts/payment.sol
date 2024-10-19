@@ -43,8 +43,6 @@ contract BulletPay {
 
     function pay_to(uint256 _from_topup_id, address _to_address, uint256 _amount, bytes memory _signature) external {
         require(topups[_from_topup_id].balance >= _amount, "insufficient balance");
-        // console.logAddress(_to_address);
-        // console.log(_amount);
         bytes memory encoded = abi.encodePacked(_to_address, _amount);
         // console.logBytes(encoded);
 
@@ -59,9 +57,14 @@ contract BulletPay {
         require(signer == topups[_from_topup_id].spender, "invalid signature1");
 
         uint256 remaining_balance = topups[_from_topup_id].balance - _amount;
-        topups[_from_topup_id].balance = 0;
+        // topups[_from_topup_id].balance = 0;
+
+        // console.logAddress(_to_address);
+        // console.log(_amount);
 
         require(token.transfer(_to_address, _amount), "transfer to address failed");
+        // console.logAddress(signer);
+        // console.log(remaining_balance);
 
         emit TopupSpent(_from_topup_id, topups[_from_topup_id].spender, remaining_balance);
     }
