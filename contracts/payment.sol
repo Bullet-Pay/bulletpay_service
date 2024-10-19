@@ -10,6 +10,7 @@ interface IERC20 {
 
 contract BulletPay {
     IERC20 public token;
+    address public operator;
     uint256 public total;
     uint256 public next_topup_id;
 
@@ -25,6 +26,7 @@ contract BulletPay {
 
     constructor(address _token_address) {
         token = IERC20(_token_address);
+        operator = msg.sender;
         next_topup_id = 1;
     }
 
@@ -42,6 +44,7 @@ contract BulletPay {
     }
 
     function pay_to(uint256 _from_topup_id, address _to_address, uint256 _amount, bytes memory _signature) external {
+        require(msg.sender == operator);
         require(topups[_from_topup_id].balance >= _amount, "insufficient balance");
         bytes memory encoded = abi.encodePacked(_to_address, _amount);
         // console.logBytes(encoded);
@@ -91,5 +94,10 @@ contract BulletPay {
         require(recoveredAddress != address(0), "invalid signature2");
     
         return recoveredAddress;
+    }
+
+    function update_operator(address _new_address) external {
+        require(msg.sender == operator);
+        operator = _new_address;
     }
 }
