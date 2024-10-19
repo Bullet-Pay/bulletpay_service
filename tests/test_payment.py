@@ -14,7 +14,7 @@ def test_deploy_contracts():
     mock_token = Erc20.deploy(1000000 * 10**6, "Mock USDC", 6, "mUSDC", {'from': a[0], 'gas_price': 1950000000})
 
     # Deploy BulletPay
-    sub_account_payment = BulletPay.deploy(mock_token.address, {'from': a[0], 'gas_price': 1950000000})
+    bulletpay = BulletPay.deploy(mock_token.address, {'from': a[0], 'gas_price': 1950000000})
 
     # Assert Erc20 deployment
     assert mock_token.name() == "Mock USDC"
@@ -23,5 +23,15 @@ def test_deploy_contracts():
     assert mock_token.totalSupply() == 1000000 * 10**6
 
     # Assert BulletPay deployment
-    assert sub_account_payment.token() == mock_token.address
-    assert sub_account_payment.next_account_id() == 1
+    assert bulletpay.token() == mock_token.address
+    assert bulletpay.next_topup_id() == 1
+
+def test_topup():
+    # Deploy Erc20
+    mock_token = Erc20.deploy(1000000 * 10**6, "Mock USDC", 6, "mUSDC", {'from': a[0], 'gas_price': 1950000000})
+
+    # Deploy BulletPay
+    bulletpay = BulletPay.deploy(mock_token.address, {'from': a[0], 'gas_price': 1950000000})
+
+    bulletpay.topup(100* 10**6, a[1], {'from': a[0], 'gas_price': 1950000000})
+
