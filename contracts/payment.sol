@@ -10,18 +10,37 @@ interface IERC20 {
 
 contract BulletPay {
     IERC20 public token;
-    uint256 public next_account_id;
+    uint256 public total;
+    uint256 public next_topup_id;
 
     struct Topup {
         address spender;
         uint256 balance;
     }
 
-    mapping(uint256 => Topup) public accounts;
+    mapping(uint256 => Topup) public topups;
+
+    event TopupCreated(uint256 indexed topup_id, address indexed spender, uint256 amount);
+    event TopupSpent(uint256 indexed topup_id, address indexed spender, uint256 remaining_balance);
 
     constructor(address _token_address) {
         token = IERC20(_token_address);
-        next_account_id = 1;
+        next_topup_id = 1;
+    }
+
+    function topup(uint256 _amount, address _spender) external {
+        require(_amount >= 10**6, "deposit amount must be greater than one dollor");
+
+        topups[next_topup_id] = Topup({
+            spender: _spender,
+            balance: _amount
+        });
+        require(token.transferFrom(msg.sender, address(this), total), "transfer failed");
+        emit TopupCreated(next_topup_id, _spender, _amount);
+        total += _amount;
+        next_topup_id++;
+    }
+
     }
 
     function recover_signer(bytes32 _message_hash, bytes memory _signature) internal view returns (address) {
