@@ -35,7 +35,7 @@ contract BulletPay {
             spender: _spender,
             balance: _amount
         });
-        require(token.transferFrom(msg.sender, address(this), total), "transfer failed");
+        require(token.transferFrom(msg.sender, address(this), _amount), "transfer failed");
         emit TopupCreated(next_topup_id, _spender, _amount);
         total += _amount;
         next_topup_id++;

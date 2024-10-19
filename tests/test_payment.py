@@ -33,7 +33,10 @@ def test_topup():
     # Deploy BulletPay
     bulletpay = BulletPay.deploy(mock_token.address, {'from': a[0], 'gas_price': 1950000000})
 
+    mock_token.approve(bulletpay.address, 100* 10**6, {'from': a[0], 'gas_price': 1950000000})
     bulletpay.topup(100* 10**6, a[1], {'from': a[0], 'gas_price': 1950000000})
+    assert mock_token.balanceOf(bulletpay) == 100* 10**6
+    assert bulletpay.total() == 100* 10**6
 
 def test_pay_to():
     # Deploy Erc20
@@ -49,10 +52,13 @@ def test_pay_to():
     SPENDER_ADDEESS = private_key.public_key.to_checksum_address()
     TO_ADDRESS = a[1].address
 
+    mock_token.approve(bulletpay.address, 100* 10**6, {'from': a[0], 'gas_price': 1950000000})
     bulletpay.topup(100* 10**6, SPENDER_ADDEESS, {'from': a[0], 'gas_price': 1950000000})
+    assert mock_token.balanceOf(bulletpay) == 100* 10**6
+    assert bulletpay.total() == 100* 10**6
 
     hash1 = web3.Web3.solidity_keccak(['address', 'uint256'], [TO_ADDRESS, PAYMENT_AMOUNT])
-    print(hash1.hex())
+    # print(hash1.hex())
     # hash2 = web3.Web3.solidity_keccak(['bytes', 'bytes32'], [b"\x19Ethereum Signed Message:\n32", hash1])
     # print(hash2.hex())
 
@@ -61,10 +67,10 @@ def test_pay_to():
     # v, r, s = signature.v, signature.r, signature.s
     # signature_bytes =  r.to_bytes(32, 'big') + s.to_bytes(32, 'big') + bytes([v])
     message = encode_defunct(hexstr=hash1.hex())
-    signed_message =  Account.sign_message(message, private_key=PRIVATE_KEY)
+    signed_message = Account.sign_message(message, private_key=PRIVATE_KEY)
     signature_bytes = signed_message.signature
 
-    # Call payToAddress
+    # Call pay_to
     tx = bulletpay.pay_to(1, TO_ADDRESS, PAYMENT_AMOUNT, signature_bytes, {'from': a[0], 'gas_price': 1950000000})
 
     # Assert the payment event
