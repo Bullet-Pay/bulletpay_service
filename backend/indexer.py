@@ -189,6 +189,8 @@ PAYMENT_ABI = '''[
 
 TOPUP_CREATED_EVENT = '0x8a883af501b0e5b7e5c72df878f0651b9c07b663453ecd9b6da8a52980a0519e'
 TOPUP_SPENT_EVENT = '0x23cec44a79afa2fa52a38fffc67d3f5eb7f1c8743ccd23bf17806984b1223ad9'
+
+GATEWAY_PORT = 8090
 RPC_URL = 'http://127.0.0.1:8545'
 PAYMENT_CONTRACT = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'
 w3 = web3.Web3(web3.Web3.HTTPProvider(RPC_URL))
@@ -283,7 +285,7 @@ while True:
             data = json.dumps(body)
             while True:
                 try:
-                    # requests.post('http://127.0.0.1:%s/watch' % GATEWAY_PORT, data=data.encode('utf8'))
+                    requests.post('http://127.0.0.1:%s/index' % GATEWAY_PORT, data=data.encode('utf8'))
                     break
                 except:
                     time.sleep(0.5)

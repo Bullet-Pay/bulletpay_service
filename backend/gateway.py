@@ -2,6 +2,13 @@ import tornado.ioloop
 import tornado.web
 import tornado.websocket
 
+class IndexHandler(tornado.web.RequestHandler):
+    def post(self):
+        self.write("Index")
+
+    def get(self):
+        self.write("Index Info")
+
 class NotificationHandler(tornado.websocket.WebSocketHandler):
     def open(self):
         print("WebSocket opened")
@@ -31,6 +38,7 @@ class PaymentHandler(tornado.web.RequestHandler):
 
 def make_app():
     return tornado.web.Application([
+        (r"/index", IndexHandler),
         (r"/topup", TopupHandler),
         (r"/payment", PaymentHandler),
         (r"/merchant", MerchantHandler),
