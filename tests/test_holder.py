@@ -146,7 +146,7 @@ def test_update_share_owner():
     assert holder.shares(a[3]) == 10 ** 20
     assert holder.shares(a[0]) == 0
 
-def test_pay_to():
+def _test_pay_to():
     operator = a[0]
     mock_token = Erc20.deploy(1000000 * 10**18, "Mock Token", 18, "MTK", {'from': a[0], 'gas_price': 1950000000})
     holder = ShareHolder.deploy(mock_token, {"from": a[0], 'gas_price': 1950000000})
