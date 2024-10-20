@@ -33,10 +33,10 @@
                 <div class="flex flex-wrap mb-4">
 
                     <div class="w-full p-4">
-                        <label class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" for="spender">
+                        <label class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" for="merchant_address">
                             To
                         </label>
-                        <input class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500" id="spender" type="text" placeholder="Merchant Address" value="0xD38E673B012c1B966d1d4F8702B205A3Bd1d2261">
+                        <input class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500" id="merchant_address" type="text" placeholder="Merchant Address" value="0xD38E673B012c1B966d1d4F8702B205A3Bd1d2261">
                     </div>
 
                     <div class="w-full p-4">
@@ -47,9 +47,11 @@
                     </div>
 
                 </div>
-                <button class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
-                    Topup
-                </button>
+                <div class="flex justify-center">
+                    <button class="outline bg-gray-400 font-bold py-2 px-4 rounded" id="send">
+                        Send
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -75,6 +77,27 @@ window.onload = async function() {
       console.error('Error:', error);
     }
 }
+
+document.getElementById('send').addEventListener('click', async function() {
+    const merchant_address = document.getElementById('merchant_address').value;
+    const amount = document.getElementById('amount').value;
+
+    if (!merchant_address || !amount) {
+        alert('Please fill in both spender and amount fields.');
+        return;
+    }
+
+    const response = await fetch('/send', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ merchant_address, amount })
+    });
+    const data = await response.json();
+    console.log(data);
+});
+
 </script>
 
 

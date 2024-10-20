@@ -62,15 +62,26 @@ class BalanceHandler(tornado.web.RequestHandler):
         self.finish(topups.get(addr, {}))
 
 
+class SendHandler(tornado.web.RequestHandler):
+    def post(self):
+        # addr = self.get_argument('addr').lower()
+        print(self.request.body)
+        self.finish({})
+
+
 def make_app():
     return tornado.web.Application([
         (r"/index", IndexHandler),
         (r"/topup", TopupHandler),
+
         (r"/payment", PaymentHandler),
         (r"/pay", PaymentHandler),
         (r"/balance", BalanceHandler),
+        (r"/send", SendHandler),
+
         (r"/merchant", MerchantHandler),
         (r"/notification", NotificationHandler),
+
         (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": "static"}),
     ], debug=True)
 
