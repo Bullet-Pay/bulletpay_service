@@ -23,7 +23,7 @@ class NotificationHandler(tornado.websocket.WebSocketHandler):
 
 class TopupHandler(tornado.web.RequestHandler):
     def get(self):
-        self.write("Topup Page")
+        self.render("template/topup.html")
 
 
 class MerchantHandler(tornado.web.RequestHandler):
