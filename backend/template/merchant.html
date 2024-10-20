@@ -31,9 +31,7 @@
                     Confirmation
                     <div class="ml-2 animate-spin rounded-full h-6 w-6 border-t-2 border-purple-500"></div>
                 </h2>
-                <div class="flex flex-wrap mb-4">
-                    The user 0x123 paid $10 <br>
-                    The user 0x123 paid $20 <br>
+                <div class="flex flex-wrap mb-4" id="notification_area">
                 </div>
                 <button class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
                     Topup
@@ -42,4 +40,29 @@
         </div>
     </div>
 </body>
+<script>
+const socket = new WebSocket('ws://127.0.0.1:8090/notification');
+
+socket.onmessage = (event) => {
+    // console.log(`Received message => ${event.data}`);
+    const eventData = JSON.parse(event.data);
+    console.log(eventData);
+    const notificationArea = document.getElementById('notification_area');
+    notificationArea.innerHTML += `User paid $${eventData.amount} <br>`;
+};
+
+socket.onopen = (event) => {
+    console.log('Connected to the WebSocket server');
+};
+
+socket.onclose = (event) => {
+    console.log('Disconnected from the WebSocket server');
+};
+
+socket.onerror = (event) => {
+    console.log('Error occurred');
+};
+</script>
+
+
 </html>

@@ -5,6 +5,7 @@ import tornado.web
 import tornado.websocket
 
 topups = {}
+notifications = set()
 
 class IndexHandler(tornado.web.RequestHandler):
     def post(self):
@@ -32,6 +33,8 @@ class IndexHandler(tornado.web.RequestHandler):
 class NotificationHandler(tornado.websocket.WebSocketHandler):
     def open(self):
         print("WebSocket opened")
+        global notifications
+        notifications.add(self)
 
     def on_message(self, message):
         print("Message received: {}".format(message))
@@ -39,6 +42,7 @@ class NotificationHandler(tornado.websocket.WebSocketHandler):
 
     def on_close(self):
         print("WebSocket closed")
+        notifications.remove(self)
 
 
 class TopupHandler(tornado.web.RequestHandler):
@@ -66,6 +70,9 @@ class SendHandler(tornado.web.RequestHandler):
     def post(self):
         # addr = self.get_argument('addr').lower()
         print(self.request.body)
+        for i in notifications:
+            i.write_message(self.request.body.decode())
+
         self.finish({})
 
 
