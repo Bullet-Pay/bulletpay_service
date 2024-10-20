@@ -56,12 +56,19 @@ class PaymentHandler(tornado.web.RequestHandler):
         self.render("template/payment.html")
 
 
+class BalanceHandler(tornado.web.RequestHandler):
+    def get(self):
+        addr = self.get_argument('addr').lower()
+        self.finish(topups.get(addr, {}))
+
+
 def make_app():
     return tornado.web.Application([
         (r"/index", IndexHandler),
         (r"/topup", TopupHandler),
         (r"/payment", PaymentHandler),
         (r"/pay", PaymentHandler),
+        (r"/balance", BalanceHandler),
         (r"/merchant", MerchantHandler),
         (r"/notification", NotificationHandler),
         (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": "static"}),
