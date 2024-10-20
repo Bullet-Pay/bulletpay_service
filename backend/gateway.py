@@ -28,7 +28,7 @@ class TopupHandler(tornado.web.RequestHandler):
 
 class MerchantHandler(tornado.web.RequestHandler):
     def get(self):
-        self.write("Merchant Page")
+        self.render("template/merchant.html")
 
 
 class PaymentHandler(tornado.web.RequestHandler):
@@ -43,6 +43,7 @@ def make_app():
         (r"/payment", PaymentHandler),
         (r"/merchant", MerchantHandler),
         (r"/notification", NotificationHandler),
+        (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": "static"}),
     ], debug=True)
 
 if __name__ == "__main__":
