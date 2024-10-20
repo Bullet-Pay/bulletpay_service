@@ -231,7 +231,7 @@ fetch_height = current_block
 latest_block = w3.eth.get_block_number()
 while True:
     time.sleep(0.5)
-    print(current_block, fetch_height, latest_block, latest_block - current_block)
+    # print(current_block, fetch_height, latest_block, latest_block - current_block)
     if fetch_height >= latest_block:
         try:
             latest_block = w3.eth.get_block_number()
@@ -239,7 +239,7 @@ while True:
             continue
 
     if fetch_height <= latest_block:
-        print(threading.active_count(), block_cache.keys())
+        # print(threading.active_count(), block_cache.keys())
         if threading.active_count() < 4 and len(block_cache.keys()) < 8:
             to_height = min(fetch_height+2, latest_block+1)
             for i in range(fetch_height, to_height):

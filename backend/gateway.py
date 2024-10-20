@@ -1,13 +1,33 @@
+import json
+
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
 
+topups = {}
+
 class IndexHandler(tornado.web.RequestHandler):
     def post(self):
+        global topups
+        body_json = json.loads(self.request.body)
+        print(body_json)
+        if body_json['created']:
+            for i in body_json['created']:
+                print(i[0], i[1], i[2])
+                topups.setdefault(i[1], {})
+                topups[i[1]][i[0]] = i[2]
+
+        if body_json['spent']:
+            for i in body_json['spent']:
+                print(i[0], i[1], i[2])
+                topups.setdefault(i[1], {})
+                print(topups[i[1]][i[0]] - i[2])
+                topups[i[1]][i[0]] = i[2]
+
         self.write("Index")
 
     def get(self):
-        self.write("Index Info")
+        self.finish(topups)
 
 class NotificationHandler(tornado.websocket.WebSocketHandler):
     def open(self):
