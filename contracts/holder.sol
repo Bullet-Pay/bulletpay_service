@@ -64,7 +64,7 @@ contract ShareHolder {
         emit SharesIssued(msg.sender, total_shares);
         token = IERC20(_token_address);
         last_redistribute_timestamp = block.timestamp;
-        fee = 10**6 / 100 *2;
+        fee = 0;
     }
 
     function get_shares(address _holder) public view returns (uint256) {
@@ -301,5 +301,10 @@ contract ShareHolder {
             buyback_finance_quota.amount -= uint256(-_amount);
         }
         buyback_finance_quota.price = _price;
+    }
+
+    function update_fee(uint256 _fee) public {
+        require(msg.sender == operator, "operator required");
+        fee = _fee;
     }
 }

@@ -47,6 +47,8 @@ def test_pay_to():
     mock_token = Erc20.deploy(1000000 * 10**6, "Mock USDC", 6, "mUSDC", {'from': a[0], 'gas_price': 1950000000})
 
     holder = ShareHolder.deploy(mock_token, {"from": a[0], 'gas_price': 1950000000})
+    holder.update_fee(10**6/100*2, {'from': a[0], 'gas_price': 1950000000})
+    assert holder.fee() == 10**6/100*2
 
     # Deploy BulletPay
     bulletpay = BulletPay.deploy(mock_token.address, holder.address, {'from': a[0], 'gas_price': 1950000000})
