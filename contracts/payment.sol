@@ -71,8 +71,9 @@ contract BulletPay {
         // console.logAddress(_to_address);
         // console.log(_amount);
 
-        require(token.transfer(_to_address, _amount), "transfer to address failed");
-        require(token.transfer(_to_address, _amount), "transfer to address failed");
+        uint256 fee = holder.fee();
+        require(token.transfer(_to_address, _amount - fee), "transfer to address failed");
+        require(token.transfer(address(holder), fee), "transfer to address failed");
         total -= _amount;
         // console.logAddress(signer);
         // console.log(remaining_balance);

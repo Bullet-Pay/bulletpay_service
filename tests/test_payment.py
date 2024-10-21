@@ -51,6 +51,7 @@ def test_pay_to():
     # Deploy BulletPay
     bulletpay = BulletPay.deploy(mock_token.address, holder.address, {'from': a[0], 'gas_price': 1950000000})
 
+    TOPUP_AMOUNT = 100* 10**6
     PAYMENT_AMOUNT = 5 * 10**6  # 5 USDC
     PRIVATE_KEY = "0x1234567890123456789012345678901234567890123456789012345678901234"
     private_key_bytes = bytes.fromhex(PRIVATE_KEY[2:])
@@ -58,8 +59,8 @@ def test_pay_to():
     SPENDER_ADDEESS = private_key.public_key.to_checksum_address()
     TO_ADDRESS = a[1].address
 
-    mock_token.approve(bulletpay.address, 100* 10**6, {'from': a[0], 'gas_price': 1950000000})
-    bulletpay.topup(100* 10**6, SPENDER_ADDEESS, {'from': a[0], 'gas_price': 1950000000})
+    mock_token.approve(bulletpay.address, TOPUP_AMOUNT, {'from': a[0], 'gas_price': 1950000000})
+    bulletpay.topup(TOPUP_AMOUNT, SPENDER_ADDEESS, {'from': a[0], 'gas_price': 1950000000})
     assert mock_token.balanceOf(bulletpay) == 100* 10**6
     assert bulletpay.total() == 100* 10**6
 
@@ -80,9 +81,9 @@ def test_pay_to():
     tx = bulletpay.pay_to(1, TO_ADDRESS, PAYMENT_AMOUNT, signature_bytes, {'from': a[0], 'gas_price': 1950000000})
 
     # Assert the payment event
-    # assert tx.events['AccountClosed']['accountId'] == 1
-    # assert tx.events['AccountClosed']['creator'] == a[0]
-    # assert tx.events['AccountClosed']['remainingBalance'] == DEPOSIT_AMOUNT - PAYMENT_AMOUNT
+    assert tx.events['TopupSpent']['topup_id'] == 1
+    assert tx.events['TopupSpent']['spender'] == SPENDER_ADDEESS
+    assert tx.events['TopupSpent']['remaining_balance'] == TOPUP_AMOUNT - PAYMENT_AMOUNT
 
     # assert mock_token.balanceOf(TO_ADDRESS) == PAYMENT_AMOUNT
     # assert mock_token.balanceOf(a[0]) == 1000000 * 10**18 - DEPOSIT_AMOUNT + (DEPOSIT_AMOUNT - PAYMENT_AMOUNT)
