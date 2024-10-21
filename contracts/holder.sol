@@ -55,6 +55,7 @@ contract ShareHolder {
     event FinanceSharesBuyback(address indexed investor, uint256 percentage);
 
     IERC20 public token;
+    uint256 public fee;
 
     constructor(address _token_address) {
         operator = msg.sender;
@@ -63,6 +64,7 @@ contract ShareHolder {
         emit SharesIssued(msg.sender, total_shares);
         token = IERC20(_token_address);
         last_redistribute_timestamp = block.timestamp;
+        fee = 10**6 / 100 *2;
     }
 
     function get_shares(address _holder) public view returns (uint256) {

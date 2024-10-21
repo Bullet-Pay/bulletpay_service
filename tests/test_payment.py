@@ -7,14 +7,16 @@ from eth_keys import keys
 
 
 from brownie import accounts as a
-from brownie import Erc20, BulletPay
+from brownie import Erc20, BulletPay, ShareHolder
 
 def test_deploy_contracts():
     # Deploy Erc20
     mock_token = Erc20.deploy(1000000 * 10**6, "Mock USDC", 6, "mUSDC", {'from': a[0], 'gas_price': 1950000000})
 
+    holder = ShareHolder.deploy(mock_token, {"from": a[0], 'gas_price': 1950000000})
+
     # Deploy BulletPay
-    bulletpay = BulletPay.deploy(mock_token.address, {'from': a[0], 'gas_price': 1950000000})
+    bulletpay = BulletPay.deploy(mock_token.address, holder.address, {'from': a[0], 'gas_price': 1950000000})
 
     # Assert Erc20 deployment
     assert mock_token.name() == "Mock USDC"
@@ -30,8 +32,10 @@ def test_topup():
     # Deploy Erc20
     mock_token = Erc20.deploy(1000000 * 10**6, "Mock USDC", 6, "mUSDC", {'from': a[0], 'gas_price': 1950000000})
 
+    holder = ShareHolder.deploy(mock_token, {"from": a[0], 'gas_price': 1950000000})
+
     # Deploy BulletPay
-    bulletpay = BulletPay.deploy(mock_token.address, {'from': a[0], 'gas_price': 1950000000})
+    bulletpay = BulletPay.deploy(mock_token.address, holder.address, {'from': a[0], 'gas_price': 1950000000})
 
     mock_token.approve(bulletpay.address, 100* 10**6, {'from': a[0], 'gas_price': 1950000000})
     bulletpay.topup(100* 10**6, a[1], {'from': a[0], 'gas_price': 1950000000})
@@ -42,8 +46,10 @@ def test_pay_to():
     # Deploy Erc20
     mock_token = Erc20.deploy(1000000 * 10**6, "Mock USDC", 6, "mUSDC", {'from': a[0], 'gas_price': 1950000000})
 
+    holder = ShareHolder.deploy(mock_token, {"from": a[0], 'gas_price': 1950000000})
+
     # Deploy BulletPay
-    bulletpay = BulletPay.deploy(mock_token.address, {'from': a[0], 'gas_price': 1950000000})
+    bulletpay = BulletPay.deploy(mock_token.address, holder.address, {'from': a[0], 'gas_price': 1950000000})
 
     PAYMENT_AMOUNT = 5 * 10**6  # 5 USDC
     PRIVATE_KEY = "0x1234567890123456789012345678901234567890123456789012345678901234"

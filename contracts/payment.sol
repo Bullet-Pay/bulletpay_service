@@ -8,8 +8,13 @@ interface IERC20 {
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }
 
+interface IHolder {
+    function fee() external returns (uint256);
+}
+
 contract BulletPay {
     IERC20 public token;
+    IHolder public holder;
     address public operator;
     uint256 public total;
     uint256 public next_topup_id;
@@ -24,8 +29,9 @@ contract BulletPay {
     event TopupCreated(uint256 indexed topup_id, address indexed spender, uint256 amount);
     event TopupSpent(uint256 indexed topup_id, address indexed spender, uint256 remaining_balance);
 
-    constructor(address _token_address) {
+    constructor(address _token_address, address _holder_address) {
         token = IERC20(_token_address);
+        holder = IHolder(_holder_address);
         operator = msg.sender;
         next_topup_id = 1;
     }
@@ -65,6 +71,7 @@ contract BulletPay {
         // console.logAddress(_to_address);
         // console.log(_amount);
 
+        require(token.transfer(_to_address, _amount), "transfer to address failed");
         require(token.transfer(_to_address, _amount), "transfer to address failed");
         total -= _amount;
         // console.logAddress(signer);
