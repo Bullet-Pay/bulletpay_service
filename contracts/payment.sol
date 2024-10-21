@@ -27,7 +27,7 @@ contract BulletPay {
     mapping(uint256 => Topup) public topups;
 
     event TopupCreated(uint256 indexed topup_id, address indexed spender, uint256 amount);
-    event TopupSpent(uint256 indexed topup_id, address indexed spender, uint256 remaining_balance);
+    event TopupSpent(uint256 indexed topup_id, address indexed spender, uint256 remaining_balance, uint256 pay_to_amount);
 
     constructor(address _token_address, address _holder_address) {
         token = IERC20(_token_address);
@@ -73,12 +73,12 @@ contract BulletPay {
 
         uint256 fee = holder.fee();
         require(token.transfer(_to_address, _amount - fee), "transfer to address failed");
-        require(token.transfer(address(holder), fee), "transfer to address failed");
+        require(token.transfer(address(holder), fee), "transfer to holder failed");
         total -= _amount;
         // console.logAddress(signer);
         // console.log(remaining_balance);
 
-        emit TopupSpent(_from_topup_id, signer, remaining_balance);
+        emit TopupSpent(_from_topup_id, signer, remaining_balance, _amount - fee);
     }
 
     function recover_signer(bytes32 _message_hash, bytes memory _signature) internal view returns (address) {

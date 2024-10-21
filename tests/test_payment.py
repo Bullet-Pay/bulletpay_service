@@ -85,6 +85,7 @@ def test_pay_to():
     assert tx.events['TopupSpent']['spender'] == SPENDER_ADDEESS
     assert tx.events['TopupSpent']['remaining_balance'] == TOPUP_AMOUNT - PAYMENT_AMOUNT
 
+    assert mock_token.balanceOf(holder) == holder.fee()
     # assert mock_token.balanceOf(TO_ADDRESS) == PAYMENT_AMOUNT
     # assert mock_token.balanceOf(a[0]) == 1000000 * 10**18 - DEPOSIT_AMOUNT + (DEPOSIT_AMOUNT - PAYMENT_AMOUNT)
     # assert mock_token.balanceOf(sub_account_payment.address) == 0
