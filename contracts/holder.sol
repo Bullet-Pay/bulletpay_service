@@ -6,11 +6,11 @@ pragma solidity ^0.8.20;
 interface IERC20 {
     function transfer(address _to, uint256 _value) external returns (bool success);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    //function balanceOf(address account) external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
 }
 
 contract ShareHolder {
-    uint256 constant total_shares = 10**20;
+    uint256 constant TOTAL_SHARES = 10**20;
 
     address public operator;
     mapping(address => address) public operator_votes;
@@ -59,16 +59,16 @@ contract ShareHolder {
 
     constructor(address _token_address) {
         operator = msg.sender;
-        shares[msg.sender] = total_shares;
+        shares[msg.sender] = TOTAL_SHARES;
         holders[next_holder_no] = msg.sender;
-        emit SharesIssued(msg.sender, total_shares);
+        emit SharesIssued(msg.sender, TOTAL_SHARES);
         token = IERC20(_token_address);
         last_redistribute_timestamp = block.timestamp;
         fee = 0;
     }
 
     function get_shares(address _holder) public view returns (uint256) {
-        return shares[_holder] * (total_shares - total_finance_shares) / total_shares;
+        return shares[_holder] * (TOTAL_SHARES - total_finance_shares) / TOTAL_SHARES;
     }
 
     function pay_to(address _user, uint256 _amount) public {
@@ -96,14 +96,18 @@ contract ShareHolder {
         require(can_dividend, "can dividend required");
         can_dividend = false;
 
+        uint256 to_dividend = token.balanceOf(address(this));
+        // console.log(to_dividend);
         for (uint256 i = 1; i < next_holder_no+1; i++) {
             // console.log(i);
             address holder = holders[i];
             // console.log(holder);
-            // console.log(shares[holders[i]]);
-            // console.log(shares[holders[i]] * (total_shares - total_finance_shares) / total_finance_shares);
+            // console.log(shares[holder]);
+            // console.log(TOTAL_SHARES - total_finance_shares);
+            // console.log(to_dividend * shares[holder] * (TOTAL_SHARES - total_finance_shares) / TOTAL_SHARES / TOTAL_SHARES);
+            token.transfer(holder, to_dividend * shares[holder] * (TOTAL_SHARES - total_finance_shares) / TOTAL_SHARES / TOTAL_SHARES);
         }
-        // console.log(total_shares);
+        // console.log(TOTAL_SHARES);
         // console.log(total_finance_shares);
         
         for (uint256 i = 1; i < next_finance_investor_no+1; i++) {
@@ -130,8 +134,8 @@ contract ShareHolder {
         for (uint256 i = 1; i < next_holder_no+1; i++) {
             // console.log(i);
             // console.log(shares[holders[i]]);
-            // console.log(shares[holders[i]] * (total_shares - total_contribution) / total_shares);
-            shares[holders[i]] = shares[holders[i]] * (total_shares - total_contribution) / total_shares;
+            // console.log(shares[holders[i]] * (TOTAL_SHARES - total_contribution) / TOTAL_SHARES);
+            shares[holders[i]] = shares[holders[i]] * (TOTAL_SHARES - total_contribution) / TOTAL_SHARES;
         }
 
         for (uint256 i = 0; i < contributions.length; i++) {
@@ -164,7 +168,7 @@ contract ShareHolder {
                 uint256 share = shares[holder];
                 vote_shares += share;
                 // console.log(vote_shares);
-                if(vote_shares > total_shares/2){
+                if(vote_shares > TOTAL_SHARES/2){
                     operator = _operator;
                     break;
                 }
@@ -183,7 +187,7 @@ contract ShareHolder {
             // console.log(holder);
             if(dilution_shares_votes[holder] == _amount){
                 voting_shares += shares[holder];
-                if(voting_shares > total_shares/2){
+                if(voting_shares > TOTAL_SHARES/2){
                     dilution_shares = _amount;
                     break;
                 }
@@ -203,7 +207,7 @@ contract ShareHolder {
             // console.log(holder);
             if(pay_to_limit_votes[holder] == _amount){
                 voting_shares += shares[holder];
-                if(voting_shares > total_shares/2){
+                if(voting_shares > TOTAL_SHARES/2){
                     pay_to_limit = _amount;
                     break;
                 }

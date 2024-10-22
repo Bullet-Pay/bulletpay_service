@@ -16,7 +16,7 @@ contract BulletPay {
     IERC20 public token;
     IHolder public holder;
     address public operator;
-    uint256 public total;
+    // uint256 public total;
     uint256 public next_topup_id;
 
     struct Topup {
@@ -45,7 +45,7 @@ contract BulletPay {
         });
         require(token.transferFrom(msg.sender, address(this), _amount), "transfer failed");
         emit TopupCreated(next_topup_id, _spender, _amount);
-        total += _amount;
+        // total += _amount;
         next_topup_id++;
     }
 
@@ -74,7 +74,7 @@ contract BulletPay {
         uint256 fee = holder.fee();
         require(token.transfer(_to_address, _amount - fee), "transfer to address failed");
         require(token.transfer(address(holder), fee), "transfer to holder failed");
-        total -= _amount;
+        // total -= _amount;
         // console.logAddress(signer);
         // console.log(remaining_balance);
 
